@@ -1,4 +1,4 @@
-name: : CI
+name: CI
 
 on:
   push:
@@ -44,7 +44,27 @@ jobs:
 
       - name: Build APK
         run: |
-          buildozer android debug 2>&1 | tee build.log
+          # 1. Forzar la creación de las carpetas de Android que usará Buildozer
+          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
+          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
+          
+          # 2. Descargar e instalar las Command Line Tools oficiales modernas
+          cd /tmp
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q commandlinetools-linux-11076708_latest.zip
+          mv cmdline-tools/* ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/
+          
+          # 3. Crear enlace simbólico para la compatibilidad con rutas viejas de Buildozer
+          mkdir -p ~/.buildozer/android/platform/android-sdk/tools
+          ln -s ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin ~/.buildozer/android/platform/android-sdk/tools/bin
+          
+          # 4. Pre-aceptar de forma absoluta todas las licencias de Android
+          echo -e "\n893342725745ba4d846a382556203cf0a1a47b55\n24333f8a63b6825ea9c5514f83c2829b004d1fee\n76fb282259a81cc3a166b2e566f2c8346ad4a6c3\n84831b9409646a918e30573bab4c9c91346d8abd\n504667f4c0de7af1a06de9f4b1727b84351f2910\n3513500d4d8d3d39f3db7de3215220c7327d12db" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd\n504667f4c0de7af1a06de9f4b1727b84351f2910" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
+          
+          # 5. Regresar al entorno de trabajo y ejecutar la compilación guardando tu log
+          cd $GITHUB_WORKSPACE
+          buildozer -v android debug 2>&1 | tee build.log
         continue-on-error: false
 
       - name: Upload APK
