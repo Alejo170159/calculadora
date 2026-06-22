@@ -28,9 +28,18 @@ jobs:
           python -m pip install --upgrade pip
           pip install buildozer cython virtualenv
 
+      # PASO CLAVE: Cachear las descargas de Buildozer para evitar bloqueos y acelerar el build
+      - name: Cache Buildozer global directory
+        uses: actions/cache@v4
+        with:
+          path: .buildozer
+          key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+
+      # Ejecutar buildozer asegurando que el SDK de Android se descargue y acepte licencias correctamente
       - name: Build APK
         run: |
-          yes | buildozer android debug
+          buildozer android clean
+          yes | buildozer -v android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
