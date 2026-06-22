@@ -28,18 +28,23 @@ jobs:
           python -m pip install --upgrade pip
           pip install buildozer cython virtualenv
 
-      # PASO CLAVE: Cachear las descargas de Buildozer para evitar bloqueos y acelerar el build
       - name: Cache Buildozer global directory
         uses: actions/cache@v4
         with:
           path: .buildozer
           key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
 
-      # Ejecutar buildozer asegurando que el SDK de Android se descargue y acepte licencias correctamente
       - name: Build APK
         run: |
-          buildozer android clean
-          yes | buildozer -v android debug
+          # 1. Crear directorios para las licencias del SDK de Android antes de ejecutar Buildozer
+          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
+          
+          # 2. Pre-aceptar las licencias oficiales inyectando sus firmas digitales
+          echo -e "\n893342725745ba4d846a382556203cf0a1a47b55\n24333f8a63b6825ea9c5514f83c2829b004d1fee\n76fb282259a81cc3a166b2e566f2c8346ad4a6c3\n84831b9409646a918e30573bab4c9c91346d8abd\n504667f4c0de7af1a06de9f4b1727b84351f2910\n3513500d4d8d3d39f3db7de3215220c7327d12db" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd\n504667f4c0de7af1a06de9f4b1727b84351f2910" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
+          
+          # 3. Compilar en modo Verbose para ver todo el progreso detallado
+          buildozer -v android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
