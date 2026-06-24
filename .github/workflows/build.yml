@@ -1,4 +1,4 @@
-name: Build KivyMD APK (Optimized)
+name: Build KivyMD APK (Fixed Licenses)
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      # 3. Instalar las dependencias del sistema que Kivy y Buildozer necesitan
+      # 3. Instalar las dependencias de Ubuntu que Kivy y Buildozer necesitan
       - name: Install Ubuntu dependencies
         run: |
           sudo apt-get update
@@ -61,15 +61,23 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython virtualenv
 
-      # 5. Ejecutar Buildozer para compilar el APK en modo Debug
+      # 5. CORRECCIÓN: Crear la carpeta de Android SDK y aceptar licencias automáticamente
+      - name: Accept Android SDK Licenses
+        run: |
+          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin
+          # Este comando pre-acepta los términos legales enviando "y" de forma automática
+          yes | sdkmanager --licenses || true
+
+      # 6. Ejecutar Buildozer para compilar el APK
       - name: Build APK with Buildozer
         run: |
-          buildozer android debug
+          # El comando 'yes |' simula que presionas "y" automáticamente si Buildozer vuelve a preguntar por licencias
+          yes | buildozer android debug
 
-      # 6. Guardar y subir el APK para que lo descargues
+      # 7. Guardar y subir el APK para que lo descargues
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: KivyMD-App-Standard-APK
+          name: KivyMD-App-Fixed-APK
           path: bin/*.apk
           if-no-files-found: error
