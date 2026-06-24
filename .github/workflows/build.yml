@@ -1,4 +1,4 @@
-name: Build KivyMD APK (Fixed Licenses)
+name: Build KivyMD APK (Final Fix)
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Descargar el código de tu repositorio
+      # 1. Descargar código
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      # 3. Instalar las dependencias de Ubuntu que Kivy y Buildozer necesitan
+      # 3. Instalar las dependencias completas de Ubuntu
       - name: Install Ubuntu dependencies
         run: |
           sudo apt-get update
@@ -53,31 +53,25 @@ jobs:
             libncursesw5-dev \
             libffi-dev \
             uuid-dev \
-            libnuma-dev
+            libnuma-dev \
+            openjdk-17-jdk
 
-      # 4. Instalar Buildozer y Cython via Pip
+      # 4. Instalar Buildozer y Cython
       - name: Install Buildozer and Cython
         run: |
           pip install --upgrade pip
           pip install buildozer cython virtualenv
 
-      # 5. CORRECCIÓN: Crear la carpeta de Android SDK y aceptar licencias automáticamente
-      - name: Accept Android SDK Licenses
-        run: |
-          mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin
-          # Este comando pre-acepta los términos legales enviando "y" de forma automática
-          yes | sdkmanager --licenses || true
-
-      # 6. Ejecutar Buildozer para compilar el APK
+      # 5. Compilar usando el comando nativo para aceptar licencias
       - name: Build APK with Buildozer
         run: |
-          # El comando 'yes |' simula que presionas "y" automáticamente si Buildozer vuelve a preguntar por licencias
-          yes | buildozer android debug
+          # --bdo_accept_licenses=y obliga a Buildozer a aceptar legalmente todo por ti de forma nativa
+          buildozer android debug --bdo_accept_licenses=y
 
-      # 7. Guardar y subir el APK para que lo descargues
+      # 6. Guardar y subir el APK
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: KivyMD-App-Fixed-APK
+          name: KivyMD-Calculadora-APK
           path: bin/*.apk
           if-no-files-found: error
