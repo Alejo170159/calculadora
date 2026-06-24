@@ -14,13 +14,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Configurar la versión recomendada de Python
+      # 2. Configurar la versión de Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # 3. Instalar dependencias completas del sistema Ubuntu para Kivy
+      # 3. Instalar dependencias completas del sistema Ubuntu
       - name: Install Ubuntu dependencies
         run: |
           sudo apt-get update
@@ -70,16 +70,15 @@ jobs:
           echo -e "\nd56f5187479451eabf01fb74314b75a24875c972" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
           echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
 
-      # 6. Forzar una compilación limpia (Clean) y compilar en modo Debug con Log Nivel 2
+      # 6. CORRECCIÓN: Compilar directo (sin el comando 'clean' que borraba los directorios básicos)
       - name: Build APK with Buildozer
         env:
           ANDROID_SDK_CREDENTIALS: yes
           ACCEPT_SDK_LICENSES: y
         run: |
-          buildozer android clean
           buildozer android debug --bdo_accept_licenses=y log_level=2
 
-      # 7. Guardar el APK resultante para descargarlo en la sección "Artifacts"
+      # 7. Guardar el APK resultante para descargarlo
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
