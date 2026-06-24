@@ -1,46 +1,37 @@
-name: Build Android APK
+name: Build KivyMD APK
 
 on:
   push:
     branches:
-      - main  # Se ejecuta cada vez que subes cambios a la rama main
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Descargar el código del repositorio
+      # 1. Descargar el código de tu repositorio
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Configurar Java (necesario para compilar Android)
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      # 2. Configurar el entorno de Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          distribution: 'zulu'
-          java-version: '17'
+          python-version: '3.11' # Versión estable y recomendada para Kivy/Buildozer en 2026
 
-      # 3. Darle permisos de ejecución al compilador de Android (Gradle)
-      - name: Grant execute permission for gradlew
-        run: chmod +x android/gradlew || chmod +x gradlew
+      # 3. Compilar el APK usando la acción oficial de Buildozer
+      - name: Build with Buildozer
+        uses: ArtemGovorov/buildozer-action@v1
+        id: buildozer
+        with:
+          command: buildozer android debug
+          buildozer_version: stable
 
-      # 4. Compilar el APK en modo Release (producción)
-      # Nota: Si tu proyecto no tiene una carpeta "android", cambia la línea a: ./gradlew assembleRelease
-      - name: Build Asset
-        run: |
-          if [ -d "android" ]; then
-            cd android && ./gradlew assembleRelease
-          else
-            ./gradlew assembleRelease
-          fi
-
-      # 5. SUBIR EL ARCHIVO APK (Esto es lo que te faltaba)
+      # 4. Subir el APK generado para que lo puedas descargar
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Mi-Aplicacion-APK
-          path: |
-            **/build/outputs/apk/release/*.apk
-            **/build/outputs/apk/debug/*.apk
-          if-no-files-found: error # Si no encuentra el APK, el proceso fallará y te avisará
+          name: KivyMD-App-APK
+          path: bin/*.apk
+          if-no-files-found: error
