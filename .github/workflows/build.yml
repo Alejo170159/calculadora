@@ -1,4 +1,4 @@
-name: Build KivyMD APK (Aidl Fix)
+name: Build KivyMD APK (Ultimate License Fix)
 
 on:
   push:
@@ -62,16 +62,23 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython virtualenv
 
-      # 5. Limpiar cualquier rastro de instalaciones fallidas previas
-      - name: Clean Buildozer leftovers
+      # 5. TRUCO DEFINITIVO: Pre-aceptar todas las licencias de Android a nivel de sistema operativo
+      - name: Pre-accept Android SDK Licenses
         run: |
-          rm -rf ~/.buildozer/android/platform/android-sdk
+          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
+          echo -e "\n247c16e68235281a7de769d2093d7459227d726c" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo -e "\nd56f5187479451eabf01fb74314b75a24875c972" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
+          echo -e "\n79120722343a6f314e0819f170e9009aa7db40e6" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
+          echo -e "\nde5672b1a8ac9e443f1130e21565902e45de1343" > ~/.buildozer/android/platform/android-sdk/licenses/android-googletv-license
+          echo -e "\n3358122c4d717d226a65c085de5307122c2930be" > ~/.buildozer/android/platform/android-sdk/licenses/android-sysimage-license
+          echo -e "\ne9ac30d0b722fc756754e4b4e79421b55ffb750e" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-arm-dbt-license
 
-      # 6. Compilar forzando la aceptación de licencias global
+      # 6. Compilar la aplicación pasándole las variables de entorno redundantes de aceptación
       - name: Build APK with Buildozer
         env:
-          # Esta variable acepta los términos del SDK de Android antes de que Buildozer empiece a descargar
-          ACCEPT_SDK_LICENSES: "y"
+          ANDROID_SDK_CREDENTIALS: yes
+          ACCEPT_SDK_LICENSES: y
         run: |
           buildozer android debug
 
