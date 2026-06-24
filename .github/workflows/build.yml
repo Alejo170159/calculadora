@@ -1,4 +1,4 @@
-name: Build KivyMD APK
+name: Build KivyMD APK (Optimized)
 
 on:
   push:
@@ -14,24 +14,62 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Configurar el entorno de Python
+      # 2. Configurar Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11' # Versión estable y recomendada para Kivy/Buildozer en 2026
+          python-version: '3.11'
 
-      # 3. Compilar el APK usando la acción oficial de Buildozer
-      - name: Build with Buildozer
-        uses: ArtemGovorov/buildozer-action@v1
-        id: buildozer
-        with:
-          command: buildozer android debug
-          buildozer_version: stable
+      # 3. Instalar las dependencias del sistema que Kivy y Buildozer necesitan
+      - name: Install Ubuntu dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            git \
+            ffmpeg \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-mixer-dev \
+            libsdl2-ttf-dev \
+            libportmidi-dev \
+            libswscale-dev \
+            libavformat-dev \
+            libavcodec-dev \
+            zlib1g-dev \
+            libgstreamer1.0-dev \
+            gstreamer1.0-plugins-base \
+            gstreamer1.0-plugins-good \
+            libsqlite3-dev \
+            sqlite3 \
+            bzip2 \
+            libbz2-dev \
+            libssl-dev \
+            openssl \
+            libgdbm-dev \
+            libgdbm-compat-dev \
+            liblzma-dev \
+            libreadline-dev \
+            libncursesw5-dev \
+            libffi-dev \
+            uuid-dev \
+            libnuma-dev
 
-      # 4. Subir el APK generado para que lo puedas descargar
+      # 4. Instalar Buildozer y Cython via Pip
+      - name: Install Buildozer and Cython
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython virtualenv
+
+      # 5. Ejecutar Buildozer para compilar el APK en modo Debug
+      - name: Build APK with Buildozer
+        run: |
+          buildozer android debug
+
+      # 6. Guardar y subir el APK para que lo descargues
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: KivyMD-App-APK
+          name: KivyMD-App-Standard-APK
           path: bin/*.apk
           if-no-files-found: error
