@@ -1,4 +1,4 @@
-name: Build KivyMD APK (Ultimate License Fix)
+name: CI
 
 on:
   push:
@@ -7,85 +7,79 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
-      # 1. Descargar código
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Configurar Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.10"
 
-      # 3. Instalar las dependencias de Ubuntu
-      - name: Install Ubuntu dependencies
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Android Build Dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            git \
-            ffmpeg \
-            libsdl2-dev \
-            libsdl2-image-dev \
-            libsdl2-mixer-dev \
-            libsdl2-ttf-dev \
-            libportmidi-dev \
-            libswscale-dev \
-            libavformat-dev \
-            libavcodec-dev \
-            zlib1g-dev \
-            libgstreamer1.0-dev \
-            gstreamer1.0-plugins-base \
-            gstreamer1.0-plugins-good \
-            libsqlite3-dev \
-            sqlite3 \
-            bzip2 \
-            libbz2-dev \
-            libssl-dev \
-            openssl \
-            libgdbm-dev \
-            libgdbm-compat-dev \
-            liblzma-dev \
-            libreadline-dev \
-            libncursesw5-dev \
-            libffi-dev \
-            uuid-dev \
-            libnuma-dev \
-            openjdk-17-jdk
-
-      # 4. Instalar Buildozer y Cython
-      - name: Install Buildozer and Cython
+          sudo apt update
+          sudo apt install -y \
+            git zip unzip openjdk-17-jdk \
+            autoconf automake libtool m4 \
+            pkg-config \
+            zlib1g-dev libncurses5-dev libgdbm-dev \
+            libssl-dev libffi-dev libsqlite3-dev \
+            tk-dev libgdbm-compat-dev \
+            libreadline-dev liblzma-dev \
+            cmake ninja-build
+          
+          # Rebuild libtool macros
+          sudo aclocal || true
+          sudo automake --force-missing || true
+          
+      - name: Configure Build Environment
         run: |
-          pip install --upgrade pip
-          pip install buildozer cython virtualenv
+          export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+          libtoolize --force --copy --install || true
+          aclocal || true
+          autoconf || true
+          automake --force-missing --add-missing || true
 
-      # 5. TRUCO DEFINITIVO: Pre-aceptar todas las licencias de Android a nivel de sistema operativo
-      - name: Pre-accept Android SDK Licenses
+      - name: Install Buildozer and Dependencies
         run: |
-          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
-          echo -e "\n247c16e68235281a7de769d2093d7459227d726c" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo -e "\nd56f5187479451eabf01fb74314b75a24875c972" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
-          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
-          echo -e "\n79120722343a6f314e0819f170e9009aa7db40e6" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
-          echo -e "\nde5672b1a8ac9e443f1130e21565902e45de1343" > ~/.buildozer/android/platform/android-sdk/licenses/android-googletv-license
-          echo -e "\n3358122c4d717d226a65c085de5307122c2930be" > ~/.buildozer/android/platform/android-sdk/licenses/android-sysimage-license
-          echo -e "\ne9ac30d0b722fc756754e4b4e79421b55ffb750e" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-arm-dbt-license
+          python -m pip install --upgrade pip setuptools wheel
+          pip install buildozer "Cython<3.0" virtualenv pycparser
 
-      # 6. Compilar la aplicación pasándole las variables de entorno redundantes de aceptación
-      - name: Build APK with Buildozer
+      - name: Create Buildozer Config Cache Directory
+        run: mkdir -p ~/.buildozer
+
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: Build APK
         env:
-          ANDROID_SDK_CREDENTIALS: yes
-          ACCEPT_SDK_LICENSES: y
+          ANDROID_NDK_HOME: ""
+          ANDROID_NDK_ROOT: ""
+          ANDROID_NDK_LATEST_HOME: ""
         run: |
           buildozer android debug
 
-      # 7. Guardar y subir el APK
-      - name: Upload APK Artifact
+      - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: KivyMD-Calculadora-APK
+          name: apk
           path: bin/*.apk
           if-no-files-found: error
+
+      - name: Upload Build Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: build.log
