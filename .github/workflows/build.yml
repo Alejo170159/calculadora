@@ -1,4 +1,4 @@
-name: Build KivyMD APK (Final Fix)
+name: Build KivyMD APK (Aidl Fix)
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      # 3. Instalar las dependencias completas de Ubuntu
+      # 3. Instalar las dependencias de Ubuntu
       - name: Install Ubuntu dependencies
         run: |
           sudo apt-get update
@@ -62,13 +62,20 @@ jobs:
           pip install --upgrade pip
           pip install buildozer cython virtualenv
 
-      # 5. Compilar usando el comando nativo para aceptar licencias
-      - name: Build APK with Buildozer
+      # 5. Limpiar cualquier rastro de instalaciones fallidas previas
+      - name: Clean Buildozer leftovers
         run: |
-          # --bdo_accept_licenses=y obliga a Buildozer a aceptar legalmente todo por ti de forma nativa
-          buildozer android debug --bdo_accept_licenses=y
+          rm -rf ~/.buildozer/android/platform/android-sdk
 
-      # 6. Guardar y subir el APK
+      # 6. Compilar forzando la aceptación de licencias global
+      - name: Build APK with Buildozer
+        env:
+          # Esta variable acepta los términos del SDK de Android antes de que Buildozer empiece a descargar
+          ACCEPT_SDK_LICENSES: "y"
+        run: |
+          buildozer android debug
+
+      # 7. Guardar y subir el APK
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
